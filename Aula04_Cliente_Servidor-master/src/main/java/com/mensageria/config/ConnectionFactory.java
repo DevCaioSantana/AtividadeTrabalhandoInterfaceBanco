@@ -9,9 +9,9 @@ public class ConnectionFactory {
     public static Connection getConnection(){
         try {
             return DriverManager.getConnection(
-                    "jdbc:postgresql://localhost:5433/postgres",
+                    "jdbc:postgresql://localhost:5432/postgres",
                     "postgres",
-                    "09032001c"
+                    "postgres"
             );
         } catch (SQLException e) {
             throw new RuntimeException(e);

@@ -1,8 +1,11 @@
 package com.mensageria.util;
 
 import com.mensageria.model.Alunos;
+import com.mensageria.model.Cursos;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class Funcoes {
     public Funcoes(){}
@@ -27,4 +30,29 @@ public class Funcoes {
             System.out.println("=====================================================");
         }
     }
+    public static String formatarList(List<Cursos> cursosList) {
+    if (cursosList.isEmpty()) {
+        return "Nenhum curso encontrado.";
+    }
+
+    return cursosList.stream()
+            .map(curso -> "Cod.: " + curso.getCodigo()+
+                          ", Nome: " + curso.getNome() +
+                          ", Sigla: " + curso.getSigla() +
+                          ", Área: " + curso.getArea())
+            .collect(Collectors.joining("\n"));
+}
+
+public static String formatarOptional(Optional<Cursos> cursoOptional) {
+    if (cursoOptional.isEmpty()) {
+        return "Nenhum curso encontrado.";
+    }
+
+    Cursos curso = cursoOptional.get();
+    return "Cod.: " + curso.getCodigo()+
+                          ", Nome: " + curso.getNome() +
+                          ", Sigla: " + curso.getSigla() +
+                          ", Área: " + curso.getArea();
+}
+
 }

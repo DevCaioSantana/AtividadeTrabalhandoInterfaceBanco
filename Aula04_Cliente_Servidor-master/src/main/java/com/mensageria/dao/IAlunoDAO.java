@@ -11,11 +11,11 @@ public interface IAlunoDAO {
 
     void update(Alunos aluno);
 
-    void delete(Alunos aluno);
+    void delete(Long id);
 
     Optional<Alunos> findById(Long id);
 
     List<Alunos> findAll();
 
-    List<Alunos> findByCurso(Cursos curso);
+    List<Alunos> findByCurso(String siglaCurso);
 }

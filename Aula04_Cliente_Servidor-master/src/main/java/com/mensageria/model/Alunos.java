@@ -14,7 +14,14 @@ public class Alunos {
     Cursos curso;
     String sexo;
 
+    @Override
     public String toString() {
-        return "Aluno{" + "nome='" + nome + '\'' + ", curso='" + curso.getSigla() + '\'' + '}';
+        return "Aluno: " +
+                "Matricula=" + matricula +
+                ", Nome='" + nome + '\'' +
+                ", Telefone='" + telefone + '\'' +
+                ", Maioridade=" + maioridade +
+                ", Curso='" + curso + '\'' +
+                ", Sexo='" + sexo + '\'';
     }
 }

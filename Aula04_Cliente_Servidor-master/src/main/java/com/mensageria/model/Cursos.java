@@ -17,12 +17,19 @@ public class Cursos {
     private Area area;
 
     public Cursos(String nome, String sigla, Area area) {
+        this.nome = nome;
+        this.sigla = sigla;
+        this.area = area;
     }
 
     public enum Area {
-        EXATAS, HUMANAS, BIOLOGICAS, ARTES
+        EXATAS, HUMANAS, BIOLOGICAS, ARTES;
     }
 
+    public Area getArea() {
+        return area;
+    }
+    
     @Override
     public String toString() {
         return sigla;

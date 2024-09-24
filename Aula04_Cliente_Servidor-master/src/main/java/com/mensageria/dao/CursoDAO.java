@@ -1,6 +1,5 @@
 package com.mensageria.dao;
 
-
 import com.mensageria.config.ConnectionFactory;
 import com.mensageria.model.Cursos;
 import com.mensageria.model.Cursos.Area;
@@ -8,127 +7,164 @@ import com.mensageria.model.Cursos.Area;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class CursoDAO implements ICursoDAO {
 
+    // Método para criar um novo curso
     @Override
     public Cursos create(Cursos curso) {
-        try (Connection connection = ConnectionFactory.getConnection()) {
-        String sql = "INSERT INTO Curso (nome, sigla, area) VALUES (?, ?, ?)";
+        String query = "INSERT INTO cursos (nome, sigla, area) VALUES (?, ?, ?)";
 
-        PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            stmt.setString(1, curso.getNome());
-            stmt.setString(2, curso.getSigla());
-            stmt.setString(3, curso.getArea().name());
-            stmt.executeUpdate();
-            ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                curso.setCodigo(rs.getLong(1));
+        try (Connection connection = ConnectionFactory.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            preparedStatement.setString(1, curso.getNome());
+            preparedStatement.setString(2, curso.getSigla());
+            preparedStatement.setString(3, curso.getArea().name());  // Enum convertido para String
+            preparedStatement.executeUpdate();
+
+            ResultSet resultSet = preparedStatement.getGeneratedKeys();
+            if (resultSet.next()) {
+                curso.setCodigo(resultSet.getLong(1));  // Recupera o ID gerado
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
         return curso;
     }
+
+    // Método para atualizar um curso existente
     @Override
-    public void update(Cursos curso) {
+    public Cursos update(Cursos curso) {
+        String query = "UPDATE cursos SET nome = ?, sigla = ?, area = ? WHERE codigo = ?";
+
         try (Connection connection = ConnectionFactory.getConnection()) {
-        String sql = "UPDATE Curso SET nome = ?, sigla = ?, area = ? WHERE codigo = ?";
-        PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setString(1, curso.getNome());
-            stmt.setString(2, curso.getSigla());
-            stmt.setString(3, curso.getArea().name());
-            stmt.setLong(4, curso.getCodigo());
-            stmt.executeUpdate();
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, curso.getNome());
+            preparedStatement.setString(2, curso.getSigla());
+            preparedStatement.setString(3, curso.getArea().name());
+            preparedStatement.setLong(4, curso.getCodigo());
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return curso;
+    }
+
+    // Método para deletar um curso pelo ID
+    @Override
+    public void delete(Long id) {
+        String query = "DELETE FROM cursos WHERE codigo = ?";
+
+        try (Connection connection = ConnectionFactory.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setLong(1, id);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Override
-    public void delete(Long codigo) {
-        try (Connection connection = ConnectionFactory.getConnection()) {
-        String sql = "DELETE FROM Curso WHERE codigo = ?";
-        PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setLong(1, codigo);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    // Método para listar todos os cursos
     @Override
     public List<Cursos> findAll() {
-        String sql = "SELECT * FROM Curso";
-        List<Cursos> cursos = new ArrayList<>();
+        List<Cursos> cursosList = new ArrayList<>();
+        String query = "SELECT * FROM cursos";
+
         try (Connection connection = ConnectionFactory.getConnection()) {
-        Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(sql);
-            while (rs.next()) {
-                Cursos curso = new Cursos(rs.getString("nome"), rs.getString("sigla"), Area.valueOf(rs.getString("area")));
-                curso.setCodigo(rs.getLong("codigo"));
-                cursos.add(curso);
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                Cursos curso = new Cursos();
+                curso.setCodigo(resultSet.getLong("codigo"));
+                curso.setNome(resultSet.getString("nome"));
+                curso.setSigla(resultSet.getString("sigla"));
+                curso.setArea(Cursos.Area.valueOf(resultSet.getString("area")));  // Converte String para enum
+                cursosList.add(curso);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return cursos;
+
+        return cursosList;
     }
 
+    // Método para buscar um curso pelo ID
     @Override
-    public Cursos findById(Long codigo) {
-        String sql = "SELECT * FROM Curso WHERE codigo = ?";
+    public Optional<Cursos> findById(Long id) {
+        Cursos curso = null;
+        String query = "SELECT * FROM cursos WHERE codigo = ?";
+
         try (Connection connection = ConnectionFactory.getConnection()) {
-        PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setLong(1, codigo);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    Cursos curso = new Cursos(rs.getString("nome"), rs.getString("sigla"), Area.valueOf(rs.getString("area")));
-                    curso.setCodigo(rs.getLong("codigo"));
-                    return curso;
-                }
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setLong(1, id);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                curso = new Cursos();
+                curso.setCodigo(resultSet.getLong("codigo"));
+                curso.setNome(resultSet.getString("nome"));
+                curso.setSigla(resultSet.getString("sigla"));
+                curso.setArea(Cursos.Area.valueOf(resultSet.getString("area")));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        return null;
+
+        return Optional.ofNullable(curso);
     }
 
+    // Método para buscar cursos por área
     @Override
-    public List<Cursos> findByArea(Area area) {
-        String sql = "SELECT * FROM Curso WHERE area = ?";
-        List<Cursos> cursos = new ArrayList<>();
+    public List<Cursos> findByArea(Cursos.Area area) {
+        List<Cursos> cursosList = new ArrayList<>();
+        String query = "SELECT * FROM cursos WHERE area = ?";
+
         try (Connection connection = ConnectionFactory.getConnection()) {
-        PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setString(1, area.name());
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Cursos curso = new Cursos(rs.getString("nome"), rs.getString("sigla"), Area.valueOf(rs.getString("area")));
-                    curso.setCodigo(rs.getLong("codigo"));
-                    cursos.add(curso);
-                }
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, area.name());  // Converte enum para String
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                Cursos curso = new Cursos();
+                curso.setCodigo(resultSet.getLong("codigo"));
+                curso.setNome(resultSet.getString("nome"));
+                curso.setSigla(resultSet.getString("sigla"));
+                curso.setArea(Cursos.Area.valueOf(resultSet.getString("area")));
+                cursosList.add(curso);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        return cursos;
+
+        return cursosList;
     }
 
+    // Método para buscar um curso pela sigla
     @Override
-    public Cursos findBySigla(String sigla) {
-        String sql = "SELECT * FROM Curso WHERE sigla = ?";
+    public Optional<Cursos> findBySigla(String sigla) {
+        Cursos curso = null;
+        String query = "SELECT * FROM cursos WHERE sigla = ?";
+
         try (Connection connection = ConnectionFactory.getConnection()) {
-        PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setString(1, sigla);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    Cursos curso = new Cursos(rs.getString("nome"), rs.getString("sigla"), Area.valueOf(rs.getString("area")));
-                    curso.setCodigo(rs.getLong("codigo"));
-                    return curso;
-                }
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, sigla);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                curso = new Cursos();
+                curso.setCodigo(resultSet.getLong("codigo"));
+                curso.setNome(resultSet.getString("nome"));
+                curso.setSigla(resultSet.getString("sigla"));
+                curso.setArea(Cursos.Area.valueOf(resultSet.getString("area")));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        return null;
+
+        return Optional.ofNullable(curso);
     }
 }
